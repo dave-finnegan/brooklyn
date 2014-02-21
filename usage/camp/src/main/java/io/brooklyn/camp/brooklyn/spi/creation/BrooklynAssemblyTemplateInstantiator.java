@@ -59,7 +59,9 @@ import brooklyn.util.flags.FlagUtils;
 import brooklyn.util.flags.FlagUtils.FlagConfigKeyAndValueRecord;
 import brooklyn.util.text.Strings;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -348,9 +350,46 @@ public class BrooklynAssemblyTemplateInstantiator implements AssemblyTemplateIns
             EntitySpecConfiguration specConfig = (EntitySpecConfiguration) flag;
             String type = (String) checkNotNull(specConfig.getSpecConfiguration().get("type"), "entitySpec must have key 'type'");
             Class<? extends Entity> clazz = BrooklynEntityClassResolver.resolve(type, mgmt);
-            return buildSpec(mgmt, clazz, specConfig.getSpecConfiguration());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> config = (Map<String, Object>)transformSpecialFlags(specConfig.getSpecConfiguration(), mgmt);
+            return buildSpec(mgmt, clazz, config);
         }
         return flag;
+    }
+    
+    protected Map<?, ?> transformSpecialFlags(Map<?, ?> flag, final ManagementContext mgmt) {
+        // TODO: Re-usable function
+        return Maps.transformValues(flag, new Function<Object, Object>() {
+            public Object apply(Object input) {
+                if (input instanceof Map)
+                    return transformSpecialFlags((Map<?, ?>)input, mgmt);
+                else if (input instanceof Set<?>)
+                    return MutableSet.of(transformSpecialFlags((Iterable<?>)input, mgmt));
+                else if (input instanceof List<?>)
+                    return MutableList.copyOf(transformSpecialFlags((Iterable<?>)input, mgmt));
+                else if (input instanceof Iterable<?>)
+                    return transformSpecialFlags((Iterable<?>)input, mgmt);
+                else 
+                    return transformSpecialFlags((Object)input, mgmt);
+            }
+        });
+    }
+    
+    protected Iterable<?> transformSpecialFlags(Iterable<?> flag, final ManagementContext mgmt) {
+        return Iterables.transform(flag, new Function<Object, Object>() {
+            public Object apply(Object input) {
+                if (input instanceof Map<?, ?>)
+                    return transformSpecialFlags((Map<?, ?>)input, mgmt);
+                else if (input instanceof Set<?>)
+                    return MutableSet.of(transformSpecialFlags((Iterable<?>)input, mgmt));
+                else if (input instanceof List<?>)
+                    return MutableList.copyOf(transformSpecialFlags((Iterable<?>)input, mgmt));
+                else if (input instanceof Iterable<?>)
+                    return transformSpecialFlags((Iterable<?>)input, mgmt);
+                else 
+                    return transformSpecialFlags((Object)input, mgmt);
+            }
+        });
     }
 
     /*
