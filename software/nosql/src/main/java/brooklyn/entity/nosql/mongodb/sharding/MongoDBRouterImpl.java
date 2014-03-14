@@ -4,6 +4,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import brooklyn.entity.basic.SoftwareProcessImpl;
+import brooklyn.entity.nosql.mongodb.AbstractMongoDBDriver;
 import brooklyn.entity.nosql.mongodb.MongoDBClientSupport;
 import brooklyn.event.feed.function.FunctionFeed;
 import brooklyn.event.feed.function.FunctionPollConfig;
@@ -49,4 +50,10 @@ public class MongoDBRouterImpl extends SoftwareProcessImpl implements MongoDBRou
                         .onException(Functions.<Integer>constant(0)))
                 .build();
     }
+    
+    @Override
+    public void runScript(String scriptName) {
+        ((AbstractMongoDBDriver)getDriver()).runScript(scriptName);
+    }
+
 }

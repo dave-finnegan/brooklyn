@@ -174,6 +174,11 @@ public class MongoDBServerImpl extends SoftwareProcessImpl implements MongoDBSer
         }
         return client.removeMemberFromReplicaSet(server);
     }
+    
+    @Override
+    public void runScript(String scriptName) {
+        ((AbstractMongoDBDriver)getDriver()).runScript(scriptName);
+    }
 
     @Override
     public String toString() {

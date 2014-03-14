@@ -1,6 +1,7 @@
 package brooklyn.entity.nosql.mongodb.sharding;
 
 import brooklyn.entity.basic.SoftwareProcessImpl;
+import brooklyn.entity.nosql.mongodb.AbstractMongoDBDriver;
 
 public class MongoDBConfigServerImpl extends SoftwareProcessImpl implements MongoDBConfigServer {
 
@@ -13,6 +14,11 @@ public class MongoDBConfigServerImpl extends SoftwareProcessImpl implements Mong
     protected void connectSensors() {
         super.connectSensors();
         connectServiceUpIsRunning();
+    }
+
+    @Override
+    public void runScript(String scriptName) {
+        ((AbstractMongoDBDriver)getDriver()).runScript(scriptName);
     }
 
 }

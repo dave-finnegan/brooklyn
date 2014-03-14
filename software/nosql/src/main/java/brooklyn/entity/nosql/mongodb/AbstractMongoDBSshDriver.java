@@ -22,7 +22,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-public abstract class AbstractMongoDBSshDriver extends AbstractSoftwareProcessSshDriver {
+public abstract class AbstractMongoDBSshDriver extends AbstractSoftwareProcessSshDriver implements AbstractMongoDBDriver {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractMongoDBSshDriver.class);
     
@@ -133,6 +133,9 @@ public abstract class AbstractMongoDBSshDriver extends AbstractSoftwareProcessSs
                 .add("--fork");
     }
     
+    /**
+     * If overridden, the overriding class must call runStartupScripts or implement alternative code to run the startup scripts 
+     */
     protected void launch(ImmutableList.Builder<String> argsBuilder) {
         String args = Joiner.on(" ").join(argsBuilder.build());
         String command = String.format("%s/bin/mongod %s > out.log 2> err.log < /dev/null", getExpandedInstallDir(), args);
@@ -140,5 +143,38 @@ public abstract class AbstractMongoDBSshDriver extends AbstractSoftwareProcessSs
         newScript(LAUNCHING)
                 .updateTaskAndFailOnNonZeroResultCode()
                 .body.append(command).execute();
+        runStartupScripts();
     }
+    
+    protected void runStartupScripts() {
+        AbstractMongoDBServer server = getServer();
+        String host = server.getAttribute(AbstractMongoDBServer.HOSTNAME);
+        Integer port = server.getAttribute(AbstractMongoDBServer.PORT);
+        List<String> scripts = entity.getConfig(MongoDBClient.DEFAULT_SCRIPTS);
+        if (scripts != null) {
+            for (String scriptName : scripts) {
+                runScript(scriptName, host, port);
+            }
+        }
+    }
+    
+    protected AbstractMongoDBServer getServer() {
+        return (AbstractMongoDBServer)entity;
+    }
+    
+    public void runScript(String scriptName) {
+        AbstractMongoDBServer server = getServer();
+        String host = server.getAttribute(AbstractMongoDBServer.HOSTNAME);
+        Integer port = server.getAttribute(AbstractMongoDBServer.PORT);
+        runScript(scriptName, host, port);
+    }
+    
+    private void runScript(String scriptName, String host, Integer port) {
+        String command = String.format("%s/bin/mongo %s:%s %s/%s > out.log 2> err.log < /dev/null", getExpandedInstallDir(), 
+                host, port, getRunDir(), scriptName + ".js");
+        newScript(LAUNCHING)
+            .updateTaskAndFailOnNonZeroResultCode()
+            .body.append(command).execute();
+    }
+    
 }

@@ -20,14 +20,11 @@ import brooklyn.entity.group.DynamicCluster;
 import brooklyn.entity.proxying.EntitySpec;
 import brooklyn.entity.trait.Startable;
 import brooklyn.location.Location;
-import brooklyn.location.MachineLocation;
 import brooklyn.util.collections.MutableMap;
 import brooklyn.util.exceptions.Exceptions;
 
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 
 public class MongoDBShardedDeploymentImpl extends AbstractEntity implements MongoDBShardedDeployment {
     
@@ -108,6 +105,13 @@ public class MongoDBShardedDeploymentImpl extends AbstractEntity implements Mong
     @Override
     public MongoDBShardCluster getShardCluster() {
         return getAttribute(SHARD_CLUSTER);
+    }
+
+    @Override
+    public void runScript(String scriptName) {
+        MongoDBRouterCluster routers = getAttribute(MongoDBShardedDeployment.ROUTER_CLUSTER);
+        MongoDBRouter router = routers.getAnyRouter();
+        router.runScript(scriptName);
     }
 
 }

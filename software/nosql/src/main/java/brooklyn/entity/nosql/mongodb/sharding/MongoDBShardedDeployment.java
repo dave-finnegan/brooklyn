@@ -1,9 +1,18 @@
 package brooklyn.entity.nosql.mongodb.sharding;
 
+import java.util.List;
+import java.util.Map;
+
+import com.google.common.reflect.TypeToken;
+
 import brooklyn.config.ConfigKey;
 import brooklyn.entity.Entity;
 import brooklyn.entity.Group;
+import brooklyn.entity.annotation.Effector;
+import brooklyn.entity.annotation.EffectorParam;
 import brooklyn.entity.basic.ConfigKeys;
+import brooklyn.entity.basic.MethodEffector;
+import brooklyn.entity.nosql.mongodb.AbstractMongoDBServer;
 import brooklyn.entity.proxying.ImplementedBy;
 import brooklyn.entity.trait.Startable;
 import brooklyn.event.AttributeSensor;
@@ -37,6 +46,12 @@ public interface MongoDBShardedDeployment extends Entity, Startable {
     ConfigKey<Group> CO_LOCATED_ROUTER_GROUP = ConfigKeys.newConfigKey(Group.class, "mongodb.colocated.router.group", 
             "Group to be monitored for the addition of new CoLocatedMongoDBRouter entities");
     
+    @SetFromFlag("defaultScripts")
+    ConfigKey<List<String>> DEFAULT_SCRIPTS = AbstractMongoDBServer.DEFAULT_SCRIPTS;
+    
+    @SetFromFlag("scripts")
+    ConfigKey<Map<String, String>> SCRIPTS = AbstractMongoDBServer.SCRIPTS;
+    
     public static AttributeSensor<MongoDBConfigServerCluster> CONFIG_SERVER_CLUSTER = Sensors.newSensor(
             MongoDBConfigServerCluster.class, "mongodbshardeddeployment.configservers", "Config servers");
     public static AttributeSensor<MongoDBRouterCluster> ROUTER_CLUSTER = Sensors.newSensor(
@@ -44,6 +59,11 @@ public interface MongoDBShardedDeployment extends Entity, Startable {
     
     public static AttributeSensor<MongoDBShardCluster> SHARD_CLUSTER = Sensors.newSensor(
             MongoDBShardCluster.class, "mongodbshardeddeployment.shards", "Shards");
+    
+    MethodEffector<Void> RUN_SCRIPT = new MethodEffector<Void>(MongoDBShardedDeployment.class, "runScript");
+    
+    @Effector(description="Runs one of the scripts defined in mongodb.client.scripts")
+    void runScript(@EffectorParam(name="script name", description="Name of the script as defined in mongodb.scripts") String scriptName);
     
     public MongoDBConfigServerCluster getConfigCluster();
     

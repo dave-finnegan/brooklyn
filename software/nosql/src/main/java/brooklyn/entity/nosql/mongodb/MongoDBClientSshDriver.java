@@ -35,12 +35,7 @@ public class MongoDBClientSshDriver extends AbstractMongoDBSshDriver implements 
 
     @Override
     public void launch() {
-        AbstractMongoDBServer server = getServer();
-        String host = server.getAttribute(AbstractMongoDBServer.HOSTNAME);
-        Integer port = server.getAttribute(AbstractMongoDBServer.PORT);
-        for (String scriptName : entity.getConfig(MongoDBClient.DEFAULT_SCRIPTS)) {
-            runScript(scriptName, host, port);
-        }
+        runStartupScripts();
         isRunning = true;
     }
     
@@ -49,22 +44,8 @@ public class MongoDBClientSshDriver extends AbstractMongoDBSshDriver implements 
         return isRunning;
     }
     
-    public void runScript(String scriptName) {
-        AbstractMongoDBServer server = getServer();
-        String host = server.getAttribute(AbstractMongoDBServer.HOSTNAME);
-        Integer port = server.getAttribute(AbstractMongoDBServer.PORT);
-        runScript(scriptName, host, port);
-    }
-    
-    private void runScript(String scriptName, String host, Integer port) {
-        String command = String.format("%s/bin/mongo %s:%s %s/%s > out.log 2> err.log < /dev/null", getExpandedInstallDir(), 
-                host, port, getRunDir(), scriptName + ".js");
-        newScript(LAUNCHING)
-            .updateTaskAndFailOnNonZeroResultCode()
-            .body.append(command).execute();
-    }
-    
-    private AbstractMongoDBServer getServer() {
+    @Override
+    protected AbstractMongoDBServer getServer() {
         MongoDBRouter router;
         MongoDBShardedDeployment deployment = entity.getConfig(MongoDBClient.SHARDED_DEPLOYMENT);
         Task<MongoDBRouter> task = DependentConfiguration.attributeWhenReady(deployment.getRouterCluster(), MongoDBRouterCluster.ANY_ROUTER);
